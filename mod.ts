@@ -19,7 +19,7 @@ const dab =
 
 const getMime =
 async (res: Response) => {
-    const { ext, mime } = res.body && await fileTypeFromStream(res.body) || {}
+    const { ext: _, mime } = res.body && await fileTypeFromStream(res.body) || {}
     return mime
 }
 
@@ -30,6 +30,16 @@ async (res: Response) => {
 
     return entries.map(x => x.filename)
 }
+
+const getHash =
+async (res: Response) =>
+    crypto.subtle.digest("SHA-256", await res.arrayBuffer())
+        .then(buffer => new Uint8Array(buffer)
+            .values()
+            .toArray()
+            .map(x => x.toString(16))
+            .join("")
+        )
 
 const download =
 async (url: string | URL) => {
@@ -44,11 +54,13 @@ async (url: string | URL) => {
 
     const entries = await getZip(res.clone())
     
+    const hash = await getHash(res)
     
     console.log({
         filename,
-        mime: await getMime(res.clone()),
+        mime,
         entries,
+        hash,
     })
 }
 
